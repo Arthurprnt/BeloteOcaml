@@ -38,7 +38,10 @@ let print_carte lacarte = match (lacarte.haut, lacarte.coul) with
 
 let rec print_jeu_aux tab i imax =
   print_carte tab.(i);
-  if i <> imax then Printf.printf " - "; print_jeu_aux tab (i+1) imax
+  if i <> imax then (
+    Printf.printf " - ";
+    print_jeu_aux tab (i+1) imax
+  )
 ;;
 
 let print_jeu tab =
