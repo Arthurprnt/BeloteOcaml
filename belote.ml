@@ -1,3 +1,9 @@
+(* Pour rendre l'aléatoire vraiment aléatoire *)
+
+Random.self_init ();;
+
+(* Les fonctions *)
+
 type couleur = Pique | Coeur | Carreau | Trefle
 type hauteur = As | Roi | Dame | Valet | Petite of int
 type carte = {haut: hauteur; coul: couleur}
@@ -7,38 +13,37 @@ let est_valide lacarte = match lacarte.haut with
   | _ -> true
 ;;
 
-let pa = {haut = As; coul = Pique};;
-let k5 = {haut = Petite 5; coul = Carreau};;
-let cv = {haut = Valet; coul = Coeur};;
-assert (est_valide pa = true);;
-assert (est_valide k5 = false);;
-assert (est_valide cv = true);;
-
 let print_carte lacarte = match (lacarte.haut, lacarte.coul) with
-  (As, Pique) -> Printf.printf "As ♠"
-  | (Roi, Pique) -> Printf.printf "Roi ♠"
-  | (Dame, Pique) -> Printf.printf "Dame ♠"
-  | (Valet, Pique) -> Printf.printf "Valet ♠"
-  | (Petite n, Pique) -> Printf.printf "%d ♠" n
-  | (As, Coeur) -> Printf.printf "As ♥"
-  | (Roi, Coeur) -> Printf.printf "Roi ♥"
-  | (Dame, Coeur) -> Printf.printf "Dame ♥"
-  | (Valet, Coeur) -> Printf.printf "Valet ♥"
-  | (Petite n, Coeur) -> Printf.printf "%d ♥" n
-  | (As, Carreau) -> Printf.printf "As ♦"
-  | (Roi, Carreau) -> Printf.printf "Roi ♦"
-  | (Dame, Carreau) -> Printf.printf "Dame ♦"
-  | (Valet, Carreau) -> Printf.printf "Valet ♦"
-  | (Petite n, Carreau) -> Printf.printf "%d ♦" n
-  | (As, Trefle) -> Printf.printf "As ♣"
-  | (Roi, Trefle) -> Printf.printf "Roi ♣"
-  | (Dame, Trefle) -> Printf.printf "Dame ♣"
-  | (Valet, Trefle) -> Printf.printf "Valet ♣"
-  | (Petite n, Trefle) -> Printf.printf "%d ♣" n
+  (As, Pique) -> Printf.printf "A♠"
+  | (Roi, Pique) -> Printf.printf "R♠"
+  | (Dame, Pique) -> Printf.printf "D♠"
+  | (Valet, Pique) -> Printf.printf "V♠"
+  | (Petite n, Pique) -> Printf.printf "%d♠" n
+  | (As, Coeur) -> Printf.printf "A♥"
+  | (Roi, Coeur) -> Printf.printf "R♥"
+  | (Dame, Coeur) -> Printf.printf "D♥"
+  | (Valet, Coeur) -> Printf.printf "V♥"
+  | (Petite n, Coeur) -> Printf.printf "%d♥" n
+  | (As, Carreau) -> Printf.printf "A♦"
+  | (Roi, Carreau) -> Printf.printf "R♦"
+  | (Dame, Carreau) -> Printf.printf "D♦"
+  | (Valet, Carreau) -> Printf.printf "V♦"
+  | (Petite n, Carreau) -> Printf.printf "%d♦" n
+  | (As, Trefle) -> Printf.printf "A♣"
+  | (Roi, Trefle) -> Printf.printf "R♣"
+  | (Dame, Trefle) -> Printf.printf "D♣"
+  | (Valet, Trefle) -> Printf.printf "V♣"
+  | (Petite n, Trefle) -> Printf.printf "%d♣" n
 ;;
 
-print_carte pa;;
-Printf.printf "\n";;
+let rec print_jeu_aux tab i imax =
+  print_carte tab.(i);
+  if i <> imax then Printf.printf " - "; print_jeu_aux tab (i+1) imax
+;;
+
+let print_jeu tab =
+  print_jeu_aux tab 0 (Array.length tab - 1)
+;;
 
 let points atout lacarte = match (lacarte.haut, lacarte.coul) with
   | (As, _) -> 11
@@ -56,22 +61,14 @@ let points atout lacarte = match (lacarte.haut, lacarte.coul) with
   | (Petite n, _) -> 0
 ;;
 
-print_int (points Pique pa);;
-Printf.printf "\n";;
-print_int (points Coeur cv);;
-Printf.printf "\n";;
-
-let compte_points lacoul ctab = 
-  let somme = ref 0 in
-  for i = 0 to Array.length ctab -1 do
-    somme := !somme + (points lacoul ctab.(i))
-  done;
-  !somme
+let rec compte_points_aux lacoul ctab ind =
+  if ind = 0 then points lacoul ctab.(ind)
+  else points lacoul ctab.(ind) + compte_points_aux lacoul ctab (ind-1)
 ;;
 
-let pile = [|pa; cv|];;
-print_int (compte_points Coeur pile);;
-Printf.printf "\n";;
+let compte_points lacoul ctab = 
+  compte_points_aux lacoul ctab (Array.length ctab - 1)
+;;
 
 let prend_la_main lacoul lacarte1 lacarte2 =
   if lacarte1.coul = lacarte2.coul then
@@ -92,13 +89,19 @@ let prend_la_main lacoul lacarte1 lacarte2 =
   else false
 ;;
 
+let rec tour_aux lacoul ctab rind i =
+  if i = 3 then
+    if prend_la_main lacoul ctab.(rind) ctab.(i) then i else rind
+  else (
+    if prend_la_main lacoul ctab.(rind) ctab.(i) then tour_aux lacoul ctab i (i+1)
+    else tour_aux lacoul ctab rind (i+1)
+  )
+;;
+
 let tour lacoul ctab =
   assert (Array.length ctab = 4);
-  let ind = ref 0 in
-  for i = 1 to 3 do
-    if prend_la_main lacoul ctab.(!ind) ctab.(i) then ind := i
-  done;
-  !ind;;
+  tour_aux lacoul ctab 0 1
+;;
 
 let genere_jeu =
   let couls = [|Pique ; Coeur ; Carreau ; Trefle|] in
@@ -110,29 +113,59 @@ let genere_jeu =
       letab.(h*4+c) <- {haut = hauts.(h); coul = couls.(c)}
     done;
   done;
-  letab;;
+  letab
+;;
 
-Printf.printf "\n\n";;
-
-let tabfinal = genere_jeu;;
-for i = 0 to Array.length tabfinal -1 do
-  print_carte tabfinal.(i);
-  Printf.printf "\n"
-done;;
+let rec melange_jeu_aux tab i imax =
+  let j = Random.int (i+1) in
+  let tmp = tab.(i) in
+  tab.(i) <- tab.(j);
+  tab.(j) <- tmp;
+  if i <> imax then melange_jeu_aux tab (i+1) imax
+;;
 
 let melange_jeu tab =
-  for i = 1 to Array.length tab - 1 do
-    let j = Random.int (i+1) in
-    let tmp = tab.(i) in
-    tab.(i) <- tab.(j);
-    tab.(j) <- tmp
-  done;
-  tab;;
+  melange_jeu_aux tab 1 (Array.length tab - 1)
+;;
 
-Printf.printf "\n\n";;
+(* Utilisation et test des fonctions *)
 
-let tabfinal2 = melange_jeu tabfinal;;
-for i = 0 to Array.length tabfinal2 -1 do
-  print_carte tabfinal2.(i);
-  Printf.printf "\n"
-done;;
+let k4 = {haut = Petite 4; coul = Carreau};;
+let pa = {haut = As; coul = Pique};;
+let cv = {haut = Valet; coul = Coeur};;
+let k7 = {haut = Petite 7; coul = Carreau};;
+let t10 = {haut = Petite 10; coul = Trefle};;
+
+let pile = [|k7; cv; pa; t10|];;
+
+assert (est_valide k4 = false);;
+assert (est_valide pa = true);;
+assert (est_valide cv = true);;
+assert (est_valide k7 = true);;
+assert (est_valide t10 = true);;
+
+print_carte pa;;
+Printf.printf "\n";;
+
+print_int (points Pique pa);;
+Printf.printf "\n";;
+print_int (points Coeur cv);;
+Printf.printf "\n";;
+print_int (points Pique k7);;
+Printf.printf "\n";;
+print_int (points Coeur t10);;
+Printf.printf "\n";;
+
+print_int (compte_points Coeur pile);;
+Printf.printf "\n";;
+
+let indmcarte = tour Pique pile;;
+print_carte pile.(indmcarte);;
+
+Printf.printf "\n\n\n";;
+
+let tabfinal = genere_jeu;;
+print_jeu tabfinal;;
+Printf.printf "\n\n\n";;
+melange_jeu tabfinal;;
+print_jeu tabfinal;;
