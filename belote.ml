@@ -106,16 +106,16 @@ let tour lacoul ctab =
   tour_aux lacoul ctab 0 1
 ;;
 
-let genere_jeu =
+let rec genere_jeu_aux c h tab i imax =
+  tab.(i) <- {haut = h.(i mod 8); coul = c.(i/8)};
+  if i <> imax then genere_jeu_aux c h tab (i+1) imax
+;;
+
+let genere_jeu () =
   let couls = [|Pique ; Coeur ; Carreau ; Trefle|] in
   let hauts = [|As ; Roi ; Dame ; Valet ; Petite 10; Petite 9 ; Petite 8 ; Petite 7|] in
-  let ctemp = {haut = As; coul = Pique} in
-  let letab = Array.make 32 ctemp in
-  for c = 0 to 3 do
-    for h = 0 to 7 do
-      letab.(h*4+c) <- {haut = hauts.(h); coul = couls.(c)}
-    done;
-  done;
+  let letab = Array.make 32 {haut = As; coul = Pique} in
+  genere_jeu_aux couls hauts letab 0 31;
   letab
 ;;
 
@@ -167,8 +167,9 @@ print_carte pile.(indmcarte);;
 
 Printf.printf "\n\n\n";;
 
-let tabfinal = genere_jeu;;
+let tabfinal = genere_jeu ();;
 print_jeu tabfinal;;
 Printf.printf "\n\n\n";;
 melange_jeu tabfinal;;
 print_jeu tabfinal;;
+Printf.printf "\n";;
